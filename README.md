@@ -2,6 +2,8 @@
 
 A full-stack job search tracker for organizing applications on a drag-and-drop Kanban board. Create an account, record role details, and move applications through each stage of the hiring process.
 
+**Live app:** [https://job-application-tracker-main-1m4k.vercel.app](https://job-application-tracker-main-1m4k.vercel.app)
+
 ## Features
 
 - Email/password authentication with Better Auth
@@ -54,7 +56,7 @@ Start the application:
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000). The SQLite database and its tables are created automatically on startup.
+For local development, visit [http://localhost:3000](http://localhost:3000). This address is only available on your own computer; anyone can access the [live app](https://job-application-tracker-main-1m4k.vercel.app). The SQLite database and its tables are created automatically on startup.
 
 ### Google Sign-In (Optional)
 
