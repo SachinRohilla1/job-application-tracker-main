@@ -21,7 +21,7 @@ A full-stack job search tracker for organizing applications on a drag-and-drop K
 | Language | TypeScript |
 | UI | React 19, Tailwind CSS 4, Radix UI |
 | Authentication | Better Auth |
-| Database | SQLite, better-sqlite3, Drizzle ORM |
+| Database | SQLite/Turso (libSQL), Drizzle ORM |
 | Drag and drop | dnd-kit |
 
 ## Run Locally
@@ -69,7 +69,29 @@ Visit [http://localhost:3000](http://localhost:3000). The SQLite database and it
 
 4. Restart the dev server. Email/password authentication works without Google credentials.
 
-For a deployed site, configure the corresponding production origin and callback URI in Google Cloud and set the same environment variables on the host. The host must provide persistent storage for the SQLite file; ephemeral serverless filesystems will not preserve local data.
+### Deploying to Vercel with Turso
+
+Vercel's serverless filesystem is ephemeral, so do not use the local SQLite file for deployed data. Create a persistent Turso database and token:
+
+```bash
+turso db create job-application-tracker
+turso db show job-application-tracker --url
+turso db tokens create job-application-tracker
+```
+
+In Vercel, import this GitHub repository and add these Production (and Preview, if desired) environment variables:
+
+| Variable | Value |
+| --- | --- |
+| `TURSO_DATABASE_URL` | URL returned by `turso db show --url` |
+| `TURSO_AUTH_TOKEN` | Token returned by `turso db tokens create` |
+| `BETTER_AUTH_SECRET` | A unique, high-entropy secret |
+| `BETTER_AUTH_URL` | The deployed app's canonical HTTPS URL |
+| `NEXT_PUBLIC_BETTER_AUTH_URL` | The same deployed app URL |
+
+The app automatically creates its tables in the configured database. The local `SQLITE_DB_PATH` is only used when `TURSO_DATABASE_URL` is unset. Never commit the Turso auth token.
+
+If Google sign-in is enabled, add the deployed callback URI (`https://<your-domain>/api/auth/callback/google`) to the Google OAuth client and configure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Vercel.
 
 ## Project Structure
 

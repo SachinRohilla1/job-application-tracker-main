@@ -8,7 +8,7 @@ import { Suspense } from "react";
 import { and, asc, eq } from "drizzle-orm";
 
 async function getBoard(userId: string) {
-  const board = db
+  const board = await db
     .select()
     .from(boards)
     .where(and(eq(boards.userId, userId), eq(boards.name, "Job Hunt")))
@@ -16,27 +16,27 @@ async function getBoard(userId: string) {
 
   if (!board) return null;
 
-  const boardColumns = db
+  const boardColumns = await db
     .select()
     .from(columns)
     .where(eq(columns.boardId, board.id))
     .orderBy(asc(columns.order))
     .all();
 
-  return {
-    _id: board.id,
-    name: board.name,
-    columns: boardColumns.map((column) => ({
-      _id: column.id,
-      name: column.name,
-      order: column.order,
-      jobApplications: db
+  const hydratedColumns = await Promise.all(
+    boardColumns.map(async (column) => {
+      const jobs = await db
         .select()
         .from(jobApplications)
         .where(eq(jobApplications.columnId, column.id))
         .orderBy(asc(jobApplications.order))
-        .all()
-        .map((job) => ({
+        .all();
+
+      return {
+        _id: column.id,
+        name: column.name,
+        order: column.order,
+        jobApplications: jobs.map((job) => ({
           _id: job.id,
           company: job.company,
           position: job.position,
@@ -50,7 +50,14 @@ async function getBoard(userId: string) {
           tags: JSON.parse(job.tags) as string[],
           description: job.description ?? undefined,
         })),
-    })),
+      };
+    })
+  );
+
+  return {
+    _id: board.id,
+    name: board.name,
+    columns: hydratedColumns,
   };
 }
 

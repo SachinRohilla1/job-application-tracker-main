@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getSession } from "../auth/auth";
-import { db, sqlite } from "../db";
+import { db } from "../db";
 import { boards, columns, jobApplications } from "../db/schema";
 
 interface JobApplicationData {
@@ -49,7 +49,7 @@ export async function createJobApplication(data: JobApplicationData) {
     return { error: "Missing required fields" };
   }
 
-  const board = db
+  const board = await db
     .select()
     .from(boards)
     .where(and(eq(boards.id, boardId), eq(boards.userId, session.user.id)))
@@ -59,7 +59,7 @@ export async function createJobApplication(data: JobApplicationData) {
     return { error: "Board not found" };
   }
 
-  const column = db
+  const column = await db
     .select()
     .from(columns)
     .where(and(eq(columns.id, columnId), eq(columns.boardId, boardId)))
@@ -69,7 +69,7 @@ export async function createJobApplication(data: JobApplicationData) {
     return { error: "Column not found" };
   }
 
-  const lastJob = db
+  const lastJob = await db
     .select({ order: jobApplications.order })
     .from(jobApplications)
     .where(eq(jobApplications.columnId, columnId))
@@ -77,7 +77,7 @@ export async function createJobApplication(data: JobApplicationData) {
     .limit(1)
     .get();
   const now = new Date();
-  const job = db
+  const job = await db
     .insert(jobApplications)
     .values({
       id: randomUUID(),
@@ -125,7 +125,7 @@ export async function updateJobApplication(
     return { error: "Unauthorized" };
   }
 
-  const job = db
+  const job = await db
     .select()
     .from(jobApplications)
     .where(eq(jobApplications.id, id))
@@ -141,7 +141,7 @@ export async function updateJobApplication(
 
   const { columnId, order, tags, ...fields } = updates;
   const targetColumnId = columnId ?? job.columnId;
-  const targetColumn = db
+  const targetColumn = await db
     .select()
     .from(columns)
     .where(
@@ -166,8 +166,8 @@ export async function updateJobApplication(
   const shouldReorder = isMoving || order !== undefined;
 
   if (shouldReorder) {
-    const reorderJobs = sqlite.transaction(() => {
-      const targetJobs = db
+    await db.transaction(async (tx) => {
+      const targetJobs = await tx
         .select({ id: jobApplications.id })
         .from(jobApplications)
         .where(
@@ -186,7 +186,7 @@ export async function updateJobApplication(
       targetJobs.splice(insertAt, 0, { id });
 
       for (const [index, item] of targetJobs.entries()) {
-        db.update(jobApplications)
+        await tx.update(jobApplications)
           .set(
             item.id === id
               ? {
@@ -200,16 +200,14 @@ export async function updateJobApplication(
           .run();
       }
     });
-
-    reorderJobs();
   } else if (Object.keys(jobChanges).length > 1) {
-    db.update(jobApplications)
+    await db.update(jobApplications)
       .set(jobChanges)
       .where(eq(jobApplications.id, id))
       .run();
   }
 
-  const updated = db
+  const updated = await db
     .select()
     .from(jobApplications)
     .where(eq(jobApplications.id, id))
@@ -230,7 +228,7 @@ export async function deleteJobApplication(id: string) {
     return { error: "Unauthorized" };
   }
 
-  const job = db
+  const job = await db
     .select()
     .from(jobApplications)
     .where(eq(jobApplications.id, id))
@@ -244,7 +242,7 @@ export async function deleteJobApplication(id: string) {
     return { error: "Unauthorized" };
   }
 
-  db.delete(jobApplications).where(eq(jobApplications.id, id)).run();
+  await db.delete(jobApplications).where(eq(jobApplications.id, id)).run();
   revalidatePath("/dashboard");
 
   return { success: true };

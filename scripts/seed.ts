@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
-import { db, sqlite } from "../lib/db";
+import { db, dbReady } from "../lib/db";
 import { boards, columns, jobApplications, user } from "../lib/db/schema";
 import { initializeUserBoard } from "../lib/init-user-board";
 
@@ -159,10 +159,11 @@ async function seed() {
   }
 
   try {
+    await dbReady;
     console.log("🌱 Starting seed process...");
     console.log(`📋 Seeding data for user ID: ${USER_ID}`);
 
-    const existingUser = db
+    const existingUser = await db
       .select({ id: user.id })
       .from(user)
       .where(eq(user.id, USER_ID))
@@ -172,7 +173,7 @@ async function seed() {
     }
 
     await initializeUserBoard(USER_ID);
-    const board = db
+    const board = await db
       .select()
       .from(boards)
       .where(and(eq(boards.userId, USER_ID), eq(boards.name, "Job Hunt")))
@@ -182,7 +183,7 @@ async function seed() {
       throw new Error("Could not initialize the user's board.");
     }
 
-    const boardColumns = db
+    const boardColumns = await db
       .select()
       .from(columns)
       .where(eq(columns.boardId, board.id))
@@ -202,11 +203,11 @@ async function seed() {
       columnMap[column.name] = column.id;
     });
 
-    const deletedJobs = db
+    const deleteResult = await db
       .delete(jobApplications)
       .where(eq(jobApplications.userId, USER_ID))
-      .run().changes;
-    console.log(`🗑️  Deleted ${deletedJobs} existing job applications`);
+      .run();
+    console.log(`🗑️  Deleted ${deleteResult.rowsAffected} existing job applications`);
 
     // Distribute jobs across columns
     const jobsByColumn: Record<string, typeof SAMPLE_JOBS> = {
@@ -219,7 +220,7 @@ async function seed() {
 
     let totalCreated = 0;
     const now = new Date();
-    const insertJobs = sqlite.transaction(() => {
+    await db.transaction(async (tx) => {
       for (const [columnName, jobs] of Object.entries(jobsByColumn)) {
         const columnId = columnMap[columnName];
         if (!columnId) {
@@ -228,7 +229,7 @@ async function seed() {
         }
 
         for (const [index, jobData] of jobs.entries()) {
-          db.insert(jobApplications)
+          await tx.insert(jobApplications)
             .values({
               id: randomUUID(),
               company: jobData.company,
@@ -251,7 +252,6 @@ async function seed() {
         }
       }
     });
-    insertJobs();
 
     console.log(`\n🎉 Seed completed successfully!`);
     console.log(`📊 Created ${totalCreated} job applications`);
@@ -261,8 +261,6 @@ async function seed() {
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     process.exit(1);
-  } finally {
-    sqlite.close();
   }
 }
 

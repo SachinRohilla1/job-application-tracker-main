@@ -3,8 +3,10 @@ import { betterAuth } from "better-auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { initializeUserBoard } from "../init-user-board";
-import { db } from "../db";
+import { db, dbReady } from "../db";
 import * as schema from "../db/schema";
+
+await dbReady;
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;

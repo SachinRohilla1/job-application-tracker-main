@@ -1,20 +1,43 @@
-import Database from "better-sqlite3";
+import { createClient } from "@libsql/client";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./db/schema";
 
-const databasePath = path.resolve(
+const configuredUrl = process.env.TURSO_DATABASE_URL;
+if (!configuredUrl && process.env.VERCEL === "1") {
+  throw new Error(
+    "TURSO_DATABASE_URL is required on Vercel. Configure a persistent Turso database before deploying."
+  );
+}
+
+const localDatabasePath = path.resolve(
   process.cwd(),
   process.env.SQLITE_DB_PATH || "data/job-application-tracker.sqlite"
 );
+const databaseUrl =
+  configuredUrl || `file:${localDatabasePath.replace(/\\/g, "/")}`;
+const isLocalDatabase = databaseUrl.startsWith("file:");
+const authToken = process.env.TURSO_AUTH_TOKEN;
 
-mkdirSync(path.dirname(databasePath), { recursive: true });
+if (isLocalDatabase) {
+  mkdirSync(path.dirname(localDatabasePath), { recursive: true });
+} else if (!authToken) {
+  throw new Error(
+    "TURSO_AUTH_TOKEN is required when TURSO_DATABASE_URL points to a remote database."
+  );
+}
 
-export const sqlite = new Database(databasePath);
-sqlite.pragma("foreign_keys = ON");
+export const client = createClient({
+  url: databaseUrl,
+  ...(authToken ? { authToken } : {}),
+});
 
-sqlite.exec(`
+export const db = drizzle(client, { schema });
+
+export const dbReady = client.executeMultiple(`
+  PRAGMA foreign_keys = ON;
+
   CREATE TABLE IF NOT EXISTS user (
     id TEXT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
@@ -106,5 +129,3 @@ sqlite.exec(`
   CREATE INDEX IF NOT EXISTS job_applications_user
     ON jobApplications(userId);
 `);
-
-export const db = drizzle(sqlite, { schema });

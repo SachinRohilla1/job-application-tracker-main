@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { db, sqlite } from "./db";
+import { db, dbReady } from "./db";
 import { boards, columns } from "./db/schema";
 
 const DEFAULT_COLUMNS = [
@@ -12,7 +12,9 @@ const DEFAULT_COLUMNS = [
 ];
 
 export async function initializeUserBoard(userId: string) {
-  const existingBoard = db
+  await dbReady;
+
+  const existingBoard = await db
     .select()
     .from(boards)
     .where(and(eq(boards.userId, userId), eq(boards.name, "Job Hunt")))
@@ -24,8 +26,8 @@ export async function initializeUserBoard(userId: string) {
 
   const now = new Date();
   const boardId = randomUUID();
-  const createBoard = sqlite.transaction(() => {
-    db.insert(boards)
+  const createdColumns = await db.transaction(async (tx) => {
+    await tx.insert(boards)
       .values({
         id: boardId,
         name: "Job Hunt",
@@ -44,11 +46,10 @@ export async function initializeUserBoard(userId: string) {
       updatedAt: now,
     }));
 
-    db.insert(columns).values(newColumns).run();
+    await tx.insert(columns).values(newColumns).run();
     return newColumns;
   });
 
-  const createdColumns = createBoard();
   return {
     id: boardId,
     name: "Job Hunt",
