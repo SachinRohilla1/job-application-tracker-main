@@ -18,7 +18,9 @@ const localDatabasePath = path.resolve(
 const databaseUrl =
   configuredUrl || `file:${localDatabasePath.replace(/\\/g, "/")}`;
 const isLocalDatabase = databaseUrl.startsWith("file:");
-const authToken = process.env.TURSO_AUTH_TOKEN;
+const authToken =
+  process.env.TURSO_AUTH_TOKEN ??
+  process.env.TURSO_DATABASE_TURSO_AUTH_TOKEN;
 
 if (isLocalDatabase) {
   mkdirSync(path.dirname(localDatabasePath), { recursive: true });

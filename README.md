@@ -91,6 +91,8 @@ In Vercel, import this GitHub repository and add these Production (and Preview, 
 
 The app automatically creates its tables in the configured database. The local `SQLITE_DB_PATH` is only used when `TURSO_DATABASE_URL` is unset. Never commit the Turso auth token.
 
+When connecting the Turso Cloud Vercel integration, use `TURSO_DATABASE` as the environment-variable prefix. The integration names its token `TURSO_DATABASE_TURSO_AUTH_TOKEN`; the app accepts that name as well as `TURSO_AUTH_TOKEN`.
+
 If Google sign-in is enabled, add the deployed callback URI (`https://<your-domain>/api/auth/callback/google`) to the Google OAuth client and configure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Vercel.
 
 ## Project Structure
