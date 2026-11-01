@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
-import { db, dbReady } from "../lib/db";
+import { db, ensureDbReady } from "../lib/db";
 import { boards, columns, jobApplications, user } from "../lib/db/schema";
 import { initializeUserBoard } from "../lib/init-user-board";
 
@@ -159,7 +159,7 @@ async function seed() {
   }
 
   try {
-    await dbReady;
+    await ensureDbReady();
     console.log("🌱 Starting seed process...");
     console.log(`📋 Seeding data for user ID: ${USER_ID}`);
 

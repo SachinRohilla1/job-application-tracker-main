@@ -3,10 +3,8 @@ import { betterAuth } from "better-auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { initializeUserBoard } from "../init-user-board";
-import { db, dbReady } from "../db";
+import { db, ensureDbReady } from "../db";
 import * as schema from "../db/schema";
-
-await dbReady;
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -47,14 +45,20 @@ export const auth = betterAuth({
 });
 
 export async function getSession() {
+  const requestHeaders = await headers();
+  await ensureDbReady();
+
   return auth.api.getSession({
-    headers: await headers(),
+    headers: requestHeaders,
   });
 }
 
 export async function signOut() {
+  const requestHeaders = await headers();
+  await ensureDbReady();
+
   const result = await auth.api.signOut({
-    headers: await headers(),
+    headers: requestHeaders,
   });
 
   if (result.success) {

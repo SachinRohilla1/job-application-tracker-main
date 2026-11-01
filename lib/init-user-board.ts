@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { db, dbReady } from "./db";
+import { db, ensureDbReady } from "./db";
 import { boards, columns } from "./db/schema";
 
 const DEFAULT_COLUMNS = [
@@ -12,7 +12,7 @@ const DEFAULT_COLUMNS = [
 ];
 
 export async function initializeUserBoard(userId: string) {
-  await dbReady;
+  await ensureDbReady();
 
   const existingBoard = await db
     .select()

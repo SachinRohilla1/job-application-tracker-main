@@ -37,7 +37,11 @@ export const client = createClient({
 
 export const db = drizzle(client, { schema });
 
-export const dbReady = client.executeMultiple(`
+let dbReady: Promise<void> | null = null;
+
+export function ensureDbReady() {
+  if (!dbReady) {
+    dbReady = client.executeMultiple(`
   PRAGMA foreign_keys = ON;
 
   CREATE TABLE IF NOT EXISTS user (
@@ -130,4 +134,11 @@ export const dbReady = client.executeMultiple(`
     ON jobApplications(columnId, "order");
   CREATE INDEX IF NOT EXISTS job_applications_user
     ON jobApplications(userId);
-`);
+    `).catch((error: unknown) => {
+      dbReady = null;
+      throw error;
+    });
+  }
+
+  return dbReady;
+}
