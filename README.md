@@ -65,9 +65,10 @@ Visit [http://localhost:3000](http://localhost:3000). The SQLite database and it
    ```env
    GOOGLE_CLIENT_ID=your-google-oauth-client-id
    GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-oauth-client-id
    ```
 
-4. Restart the dev server. Email/password authentication works without Google credentials.
+4. Restart the dev server. The Google button appears when the public client ID is configured. Email/password authentication works without Google credentials.
 
 ### Deploying to Vercel with Turso
 
@@ -93,7 +94,7 @@ The app automatically creates its tables in the configured database. The local `
 
 When connecting the Turso Cloud Vercel integration, use `TURSO_DATABASE` as the environment-variable prefix. The integration names its token `TURSO_DATABASE_TURSO_AUTH_TOKEN`; the app accepts that name as well as `TURSO_AUTH_TOKEN`.
 
-If Google sign-in is enabled, add the deployed callback URI (`https://<your-domain>/api/auth/callback/google`) to the Google OAuth client and configure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Vercel.
+If Google sign-in is enabled, add the deployed callback URI (`https://<your-domain>/api/auth/callback/google`) to the Google OAuth client and configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in Vercel.
 
 ## Project Structure
 
