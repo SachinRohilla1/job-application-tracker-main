@@ -4,6 +4,12 @@ A full-stack job search tracker for organizing applications on a drag-and-drop K
 
 **Live app:** [https://job-application-tracker-main-1m4k.vercel.app](https://job-application-tracker-main-1m4k.vercel.app)
 
+## Screenshots
+
+| Homepage | Sign in |
+| --- | --- |
+| ![Job Application Tracker homepage](./public/screenshots/homepage.png) | ![Sign-in page](./public/screenshots/sign-in.png) |
+
 ## Features
 
 - Email/password authentication with Better Auth
